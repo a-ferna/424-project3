@@ -34,8 +34,8 @@ ui <- fluidPage(
     mainPanel(
       
       # Output: Tabset w/ plot, summary, and table ----
-      navlistPanel(
-        tabPanel("Plots",plotOutput("plot2"),
+      tabsetPanel(
+        tabPanel("Plot 1",navlistPanel(tabPanel("plot 1",plotOutput("plot")),tabPanel("plot 2",plotOutput("plot2"))),
                  # Sidebar panel for inputs ----
                  sidebarPanel(
                    
@@ -60,7 +60,7 @@ ui <- fluidPage(
                  
                  
           ),
-        tabPanel("Summary", verbatimTextOutput("summary")
+        tabPanel("ABOUT", verbatimTextOutput("summary")
                  
         )
         
