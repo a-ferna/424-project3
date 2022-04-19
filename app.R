@@ -1,12 +1,5 @@
 
-
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+source("data.R")
 
 #
 # load libraries
@@ -18,6 +11,11 @@ library(leaflet)
 library(leaflet.providers)
 library(DT)
 library(scales)
+
+
+
+alldata <- getAllData()
+
 
 # Define UI for application that draws a histogram
 # Define UI for random distribution app ----
@@ -99,9 +97,16 @@ server <- function(input, output) {
     dist <- input$dist
     n <- input$n
     
-    hist(d(),
-         main = paste("r", dist, "(", n, ")", sep = ""),
-         col = "#75AADB", border = "white")
+    dates <- data.frame(alldata$date)
+    colnames(dates) <- c("date")
+    
+    ggplot(dates, aes(x=date)) +
+      geom_histogram(binwidth=.5) +
+      geom_density(alpha=.2, fill="#FF6666")
+
+    # hist(d(),
+    #      main = paste("r", dist, "(", n, ")", sep = ""),
+    #      col = "#75AADB", border = "white")
   })
   
   
