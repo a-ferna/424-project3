@@ -38,6 +38,8 @@ getComm <- function() {
   
 }
 
+alldata <- getAllData()
+
 
 # dist number of rides by day of year
 dates <- data.frame(alldata$date)
