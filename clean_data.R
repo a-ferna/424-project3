@@ -9,16 +9,15 @@ df$timeNew <- strptime(df$time, format="%m/%d/%Y %I:%M:%S %p", tz="GMT")
 df$date <- as.Date(df$timeNew)
 
 df$hour <- hour(df$timeNew)
-
-
-# df$year <- year(df$date)
 df$month <- month(df$date)
 df$day <- day(df$date)
+df$wday <- wday(df$date, label=TRUE, abbr=TRUE)
 
-df$wday <- wday(df$date)
-# df$wday <- wday(df$date, label=TRUE, abbr=TRUE)
 df$date <- NULL
 df$time <- NULL
 df$timeNew <- NULL
 
 write.table(df, "taxi_data_clean.tsv", sep="\t", row.names = FALSE)
+
+
+               

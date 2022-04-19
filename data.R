@@ -1,5 +1,7 @@
 library(scales)
+library(ggplot2)
 library(RColorBrewer)
+library(tidyverse)
 
 
 getAllData <- function() {
@@ -96,5 +98,22 @@ ggplot(data = as_tibble(group_tags), mapping=aes(x=value, fill=..x..)) +
 
 
 # dist number of rides by binned trip time
-ggplot(alldata, aes(x=secs))+
-  geom_histogram(binwidth = 0.5)
+breaks <- c(0, 180, 300, 420, 600, 720, 900, 1200, 1800, 2700, 3600, 7200, 10800, 14400, 18000)
+tags <- c("3min","5min","7min","10min","12min","15min","20min","30min","45min","1hr","2hr","3hr","4hr","5hr")
+# breaks <- c(0, 100, 200, 300, 400, 500, 600, 750, 1000, 1500, 2000, 3000, 5000, 10000, 15000, 18000)
+# tags <- c("60-100","100-200","200-300","300-400","400-500","500-600","600-750","750-1000","1000-1500","1500-2000","2000-3000", "3000-5000", "5000-10000", "10000-15000", "15-18000")
+
+group_tags <- cut(alldata$secs,
+                  breaks=breaks,
+                  include.lowest=TRUE,
+                  right=FALSE,
+                  labels=tags)
+
+ggplot(data = as_tibble(group_tags), mapping=aes(x=value, fill=..x..)) +
+  geom_bar() +
+  labs(x="Trip time", y="Count", title="Number of Rides by Trip Time") +
+  scale_y_continuous(labels = comma) +
+  theme(legend.position = "none")
+## still need work so that the end of the graph shows
+## how to create table/dataframe from this?
+  
