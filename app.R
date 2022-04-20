@@ -13,7 +13,13 @@ library(DT)
 library(scales)
 library(tibble)
 library(tidyverse)
+library(maptools)
+library(rgdal)
+library(viridis)
 
+# get the shape file for the map 
+areas <- readOGR('shapefiles')
+shp <- spTransform(areas, CRS("+proj=longlat +datum=WGS84"))
 
 
 alldata <- getAllData()
@@ -184,10 +190,22 @@ server <- function(input, output) {
   
   
   output$p6 <-renderPlot({
-    # dist number of rides by binned trip time
-    ggplot(alldata, aes(x=secs))+
-      geom_histogram(binwidth = 0.5)
-    #+ scale_y_continuous(labels = comma, breaks = seq(0, 900000, 100000))
+    breaks <- c(0, 180, 300, 420, 600, 720, 900, 1200, 1800, 2700, 3600, 7200, 10800, 14400, 18000)
+    tags <- c("3min","5min","7min","10min","12min","15min","20min","30min","45min","1hr","2hr","3hr","4hr","5hr")
+    # breaks <- c(0, 100, 200, 300, 400, 500, 600, 750, 1000, 1500, 2000, 3000, 5000, 10000, 15000, 18000)
+    # tags <- c("60-100","100-200","200-300","300-400","400-500","500-600","600-750","750-1000","1000-1500","1500-2000","2000-3000", "3000-5000", "5000-10000", "10000-15000", "15-18000")
+    
+    group_tags <- cut(alldata$secs,
+                      breaks=breaks,
+                      include.lowest=TRUE,
+                      right=FALSE,
+                      labels=tags)
+    
+    ggplot(data = as_tibble(group_tags), mapping=aes(x=value, fill=..x..)) +
+      geom_bar() +
+      labs(x="Trip time", y="Count", title="Number of Rides by Trip Time") +
+      scale_y_continuous(labels = comma) +
+      theme(legend.position = "none")
   })
   
   
@@ -209,17 +227,88 @@ server <- function(input, output) {
   ## leaflet map
   output$leaf <- renderLeaflet({
     
-    #dayData <- getDayDataReactive()
+    leaflet(shp) %>% 
+      addTiles() %>% 
+      setView(lat=41.891105, lng=-87.652480,zoom = 10) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(data=shp,
+                  weight=1,
+                  highlightOptions = highlightOptions(color = "white", weight = 2,bringToFront = TRUE)
+      )
+    tripByArea <- alldata %>%
+      select(`pickup`,`dropoff`) %>%
+      gather(variable,area_num_1) %>%
+      count(variable,area_num_1) %>%
+      drop_na(area_num_1) %>%
+      mutate(area_num_1 = as.character(area_num_1))
     
-    map <- leaflet()
-    map <- addTiles(map)
-    map <- setView(map, lng = -87.624347 , lat = 41.875672 , zoom = 15)
+    shpPickUp <- shp
+    shpDropOff <- shp
+    
+    shpPickUp@data <- shpPickUp@data %>%
+      left_join(filter(tripByArea,variable == 'pickup'), 
+                by = 'area_num_1')
+    
+    shpDropOff@data <- shpDropOff@data %>%
+      left_join(filter(tripByArea,variable == 'dropoff'), 
+                by = 'area_num_1')
+    
+    bins <- c(0, 1000, 2500, 5000, 10000,15000,20000,25000,35000,50000,100000,1100000)
+    pal <- colorBin("viridis", domain = shp@data$n, bins = bins)
+    
+    theLabelsPickUp <- sprintf(
+      "<strong>Area: %s</strong><br/>Count=%g",
+      shpPickUp@data$community, shpPickUp@data$n
+    ) %>% lapply(htmltools::HTML)
+    
+    theLabelsDropOff <- sprintf(
+      "<strong>Area: %s</strong><br/>Count=%g",
+      shpDropOff@data$community, shpDropOff@data$n
+    ) %>% lapply(htmltools::HTML)
+    
+    leaflet(shpPickUp) %>% 
+      addTiles() %>% 
+      setView(lat=41.891105, lng=-87.652480,zoom = 10) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(data=shpPickUp,
+                  weight=1,
+                  fillColor = ~pal(n),
+                  fillOpacity = 0.6,
+                  group = "Pick-Ups",
+                  highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                      bringToFront = TRUE),
+                  label=~theLabelsPickUp) %>%
+      addPolygons(data=shpDropOff,
+                  weight=1,
+                  fillColor = ~pal(n),
+                  fillOpacity = 0.6,
+                  group = "Drop-offs",
+                  highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                      bringToFront = TRUE),
+                  label=~theLabelsDropOff) %>%
+      addLegend(pal = pal, 
+                values = ~n,
+                opacity = 0.6, 
+                title = "Taxi Trips",
+                position = "topright") %>%
+      addLayersControl(
+        baseGroups = c("Pick-Ups", "Drop-offs"),
+        options = layersControlOptions(collapsed = FALSE)
+      ) 
+    
+    
+    
+    #dayData <- getDayDataReactive()
+  
+    #map <- leaflet()
+    #map <- addTiles(map)
+    #map <- setView(map, lng = -87.624347 , lat = 41.875672 , zoom = 15)
   
     
     # map <- addProviderTiles(map, "Hydda.RoadsAndLabels")
     # map <- addProviderTiles(map, "Stamen.TonerLite")
     # map <- addProviderTiles(map, "Esri.WorldImagery")
-    map <- addProviderTiles(map, t)
+    # map <- addProviderTiles(map, t)
    
   })
   

@@ -31,7 +31,7 @@ getAllData <- function() {
 getComm <- function() {
   set.seed(1)
   
-  community_area <- read.table("areas/community_areas.csv", header=TRUE, sep=",")
+  community_area <- read.table("community_areas.csv", header=TRUE, sep=",")
   alpha <- community_area[order(community_area$community),]
   
   return(alpha$community)
@@ -119,3 +119,8 @@ ggplot(data = as_tibble(group_tags), mapping=aes(x=value, fill=..x..)) +
 ## still need work so that the end of the graph shows
 ## how to create table/dataframe from this?
   
+
+
+
+ggplot(alldata, aes(x=secs))+
+  geom_histogram(binwidth = 0.5)
