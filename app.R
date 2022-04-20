@@ -17,6 +17,7 @@ library(maptools)
 library(rgdal)
 library(viridis)
 
+
 # get the shape file for the map 
 areas <- readOGR('shapefiles')
 shp <- spTransform(areas, CRS("+proj=longlat +datum=WGS84"))
@@ -253,8 +254,8 @@ server <- function(input, output) {
       left_join(filter(tripByArea,variable == 'dropoff'), 
                 by = 'area_num_1')
     
-    bins <- c(0, 1000, 2500, 5000, 10000,15000,20000,25000,35000,50000,100000,1100000)
-    pal <- colorBin("viridis", domain = shp@data$n, bins = bins)
+    bins <- c(0, 1000, 2500, 5000, 10000,15000,20000,30000,50000,100000,1000000,3700000)
+    pal <- colorBin("magma", domain = shp@data$n, bins = bins)
     
     theLabelsPickUp <- sprintf(
       "<strong>Area: %s</strong><br/>Count=%g",
