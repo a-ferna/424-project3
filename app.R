@@ -19,6 +19,7 @@ library(viridis)
 
 
 # get the shape file for the map 
+# cite where we got the shape file from https://data.cityofchicago.org/Facilities-Geographic-Boundaries/Boundaries-Community-Areas-current-/cauq-8yn6
 areas <- readOGR('shapefiles')
 shp <- spTransform(areas, CRS("+proj=longlat +datum=WGS84"))
 
@@ -27,6 +28,7 @@ alldata <- getAllData()
 
 #placeholder for communities
 communities <- getComm()
+areasDATA <- getAreas()
 
 # Define UI for application that draws a histogram
 # Define UI for random distribution app ----
@@ -89,9 +91,9 @@ ui <- fluidPage(
                # Input: Select the community alphabetically  ----
                selectInput("community", "Select Community", communities),
                # br() element to introduce extra vertical spacing ----
-               radioButtons("toFrom", "to/from",
-                            c("starting" = "start",
-                              "ending" = "end"))
+               radioButtons("toFrom", "From", 
+                          c("start" = "start",
+                              "end" = "end"))
   ) 
 )
 
@@ -225,8 +227,55 @@ server <- function(input, output) {
   })
   
   
+  ## reactive functions for selected area 
+  getIDReactive <- reactive({ as.character(areasDATA[areasDATA$community == input$community, "area_id"]) })
+  getAreaDROPReactive <- reactive({ getDATADrop(getIDReactive()) })
+  getAreaPICKReactive <- reactive({ getDATAPick(getIDReactive()) })
+  
+  
   ## leaflet map
   output$leaf <- renderLeaflet({
+    
+    if(input$toFrom == 'start' ){
+      print(input$community)
+      print("start radio")
+      DATAarea <-getAreaPICKReactive()
+      
+      tripByArea <- DATAarea %>%
+        select(`pickup`,`dropoff`) %>%
+        gather(variable,area_num_1) %>%
+        count(variable,area_num_1) %>%
+        drop_na(area_num_1) %>%
+        mutate(area_num_1 = as.character(area_num_1))
+      
+      total <-tripByArea$n[length(tripByArea$n)] 
+      print(total)
+      tripByArea$percentage <- ((tripByArea$n)/total)*100
+      
+      
+    }else if(input$toFrom == 'end' ){
+      print(input$community)
+      print("end radio")
+      DATAarea <-getAreaDROPReactive()
+      
+      tripByArea <- DATAarea %>%
+        select(`pickup`,`dropoff`) %>%
+        gather(variable,area_num_1) %>%
+        count(variable,area_num_1) %>%
+        drop_na(area_num_1) %>%
+        mutate(area_num_1 = as.character(area_num_1))
+      
+      total <-tripByArea$n[1] 
+      print(total)
+      tripByArea$percentage <- ((tripByArea$n)/total)*100
+      
+      
+    }
+    
+    #areaTest 
+    DATAarea <-getDATADrop(40)
+    #colorQuantile()
+    
     
     leaflet(shp) %>% 
       addTiles() %>% 
@@ -236,13 +285,9 @@ server <- function(input, output) {
                   weight=1,
                   highlightOptions = highlightOptions(color = "white", weight = 2,bringToFront = TRUE)
       )
-    tripByArea <- alldata %>%
-      select(`pickup`,`dropoff`) %>%
-      gather(variable,area_num_1) %>%
-      count(variable,area_num_1) %>%
-      drop_na(area_num_1) %>%
-      mutate(area_num_1 = as.character(area_num_1))
     
+    
+   
     shpPickUp <- shp
     shpDropOff <- shp
     
@@ -254,17 +299,17 @@ server <- function(input, output) {
       left_join(filter(tripByArea,variable == 'dropoff'), 
                 by = 'area_num_1')
     
-    bins <- c(0, 1000, 2500, 5000, 10000,15000,20000,30000,50000,100000,1000000,3700000)
-    pal <- colorBin("magma", domain = shp@data$n, bins = bins)
+    bins <- c(0, 0.3, 0.5, 1, 2,3,4,5,6,7,9,10,50,100)
+    pal <- colorBin("inferno", domain = (shp@data$percentage), bins = bins)
     
     theLabelsPickUp <- sprintf(
-      "<strong>Area: %s</strong><br/>Count=%g",
-      shpPickUp@data$community, shpPickUp@data$n
+      "<strong>Community: %s</strong><br/>percentage=%g",
+      shpPickUp@data$community, shpPickUp@data$percentage
     ) %>% lapply(htmltools::HTML)
     
     theLabelsDropOff <- sprintf(
-      "<strong>Area: %s</strong><br/>Count=%g",
-      shpDropOff@data$community, shpDropOff@data$n
+      "<strong>Community: %s</strong><br/>percentage=%g",
+      shpDropOff@data$community, shpDropOff@data$percentage
     ) %>% lapply(htmltools::HTML)
     
     leaflet(shpPickUp) %>% 
@@ -273,7 +318,7 @@ server <- function(input, output) {
       addProviderTiles(providers$CartoDB.Positron) %>%
       addPolygons(data=shpPickUp,
                   weight=1,
-                  fillColor = ~pal(n),
+                  fillColor = ~pal(percentage),
                   fillOpacity = 0.6,
                   group = "Pick-Ups",
                   highlightOptions = highlightOptions(color = "white", weight = 2,
@@ -281,16 +326,16 @@ server <- function(input, output) {
                   label=~theLabelsPickUp) %>%
       addPolygons(data=shpDropOff,
                   weight=1,
-                  fillColor = ~pal(n),
+                  fillColor = ~pal(percentage),
                   fillOpacity = 0.6,
                   group = "Drop-offs",
                   highlightOptions = highlightOptions(color = "white", weight = 2,
                                                       bringToFront = TRUE),
                   label=~theLabelsDropOff) %>%
       addLegend(pal = pal, 
-                values = ~n,
+                values = ~percentage,
                 opacity = 0.6, 
-                title = "Taxi Trips",
+                title = "Taxi Trips %",
                 position = "topright") %>%
       addLayersControl(
         baseGroups = c("Pick-Ups", "Drop-offs"),

@@ -36,6 +36,50 @@ getComm <- function() {
   
   return(alpha$community)
   
+
+}
+
+getAreas <- function(){
+  
+  community_area <- read.table("community_areas.csv", header=TRUE, sep=",")
+  alpha <- community_area[order(community_area$community),]
+  return(alpha)
+}
+
+## function to upload file given areaID
+getDATADrop <- function(areaID) {
+  areaID = areaID
+  # string1 <- "/Users/andreaherrera/Downloads/project2-cs424/code/data_files/final_data_"
+  #string1 <- "/Users/ariad/Documents/424/project2/data_files/final_data_"
+  string1 <- "dropoff_areas/dropoffarea"
+  
+  string2 <- as.character(areaID)
+  path = paste(string1,string2,".tsv",sep="")
+  print(path)
+  Data <- read.table(path, sep = ',', header = TRUE, quote="\"")
+  
+  return(Data)
+}
+
+#test 
+#areaTest <-getDATADrop(1)
+#areaTestPick <-getDATAPick(1)
+
+
+
+## function to upload file given areaID
+getDATAPick <- function(areaID) {
+  areaID = areaID
+  # string1 <- "/Users/andreaherrera/Downloads/project2-cs424/code/data_files/final_data_"
+  #string1 <- "/Users/ariad/Documents/424/project2/data_files/final_data_"
+  string1 <- "pickup_areas/pickuparea"
+  
+  string2 <- as.character(areaID)
+  path = paste(string1,string2,".tsv",sep="")
+  print(path)
+  Data <- read.table(path, sep = ',', header = TRUE, quote="\"")
+  
+  return(Data)
 }
 
 alldata <- getAllData()
