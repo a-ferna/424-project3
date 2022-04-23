@@ -1,0 +1,5 @@
+secs,miles,pickup,dropoff,hour,month,day,wday,company_id
+1560,11.3,32,11,21,8,24,Sat,34
+960,7.2,76,11,1,8,25,Sun,34
+1740,6.7,77,11,10,9,6,Fri,34
+840,7.7,76,11,2,12,4,Wed,34

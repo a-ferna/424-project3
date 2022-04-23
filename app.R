@@ -27,8 +27,11 @@ shp <- spTransform(areas, CRS("+proj=longlat +datum=WGS84"))
 alldata <- getAllData()
 
 #placeholder for communities
-communities <- getComm()
+communities <- getCommNames()
 areasDATA <- getAreas()
+
+companiesnames <-getCompNames()
+companydata <-getComp()
 
 # Define UI for application that draws a histogram
 # Define UI for random distribution app ----
@@ -57,14 +60,13 @@ ui <- fluidPage(
                    selectInput("community", "Select Community", communities),
                    # br() element to introduce extra vertical spacing ----
                    radioButtons("toFrom", "From", 
-                                c("start" = "start",
-                                  "end" = "end"))
+                                c("start" = "pickup",
+                                  "end" = "dropoff"))
       )),
         # Main panel for displaying outputs ----
 
           # Output: Tabset w/ plot, summary, and table ----
           navlistPanel(
-            tabPanel(""),
             tabPanel(""),
             tabPanel(""),
             tabPanel(""),
@@ -88,6 +90,17 @@ ui <- fluidPage(
             "Company",
             tabPanel("Plots ",fluidRow( splitLayout(cellWidths = c('50%','50%'),plotOutput("p7"),plotOutput("p8")))),
             tabPanel("Tabular",plotOutput("tab3")),
+            tabPanel("Map",verticalLayout(leafletOutput("leaf2"), sidebarPanel(width = 12,
+                                                                              
+                                                                               # Input: Select the company alphabetically  ----
+                                                                               selectInput("company", "Select Company", companiesnames),
+                                                                               selectInput("area", "Select Community", communities),
+                                                                  
+                                                                               # br() element to introduce extra vertical spacing ----
+                                                                               radioButtons("toFrom2", "From", 
+                                                                                            c("start" = "start",
+                                                                                              "end" = "end"))
+            ))),
             tabPanel("About",p("Project 3 - Big Yellow Taxi"),p("Data file from the Chicago Data Portal"),
                      p("An interactive visualization in R and Shiny on Shinyapps.io"),
                      p("Dashboard initially shows Map and a tabset of plots"),
@@ -199,7 +212,7 @@ server <- function(input, output) {
   ## leaflet map
   output$leaf <- renderLeaflet({
     
-    if(input$toFrom == 'start' ){
+    if(input$toFrom == 'pickup' ){
       print(input$community)
       print("start radio")
       DATAarea <-getAreaPICKReactive()
@@ -216,7 +229,7 @@ server <- function(input, output) {
       tripByArea$percentage <- ((tripByArea$n)/total)*100
       
       
-    }else if(input$toFrom == 'end' ){
+    }else if(input$toFrom == 'dropoff' ){
       print(input$community)
       print("end radio")
       DATAarea <-getAreaDROPReactive()
@@ -298,7 +311,7 @@ server <- function(input, output) {
       addLegend(pal = pal, 
                 values = ~percentage,
                 opacity = 0.6, 
-                title = "Taxi Trips %",
+                title = "Taxi Trips By Area %",
                 position = "topright") %>%
       addLayersControl(
         baseGroups = c("Pick-Ups", "Drop-offs"),
@@ -306,6 +319,125 @@ server <- function(input, output) {
       ) 
    
   })
+  
+  ## reactive functions for selected area 
+  getIDCOMPReactive <- reactive({ companydata[companydata$company==input$company, "id"] })
+  getID2Reactive <- reactive({ as.character(areasDATA[areasDATA$community == input$area, "area_id"]) })
+  
+  getCOMPDROPReactive <- reactive({ getDATA2Drop(getID2Reactive(),getIDCOMPReactive()) })
+  getCOMPPICKReactive <- reactive({ getDATA2Pick(getID2Reactive(),getIDCOMPReactive()) })
+  
+  
+  ## leaflet map
+  output$leaf2 <- renderLeaflet({
+    
+    if(input$toFrom2 == 'start' ){
+      print(input$area)
+      print(input$company)
+      
+      print("start radio")
+      DATAarea2 <-getCOMPPICKReactive()
+      
+      tripByArea2 <- DATAarea2 %>%
+        select(`pickup`,`dropoff`) %>%
+        gather(variable,area_num_1) %>%
+        count(variable,area_num_1) %>%
+        drop_na(area_num_1) %>%
+        mutate(area_num_1 = as.character(area_num_1))
+      
+      total <-tripByArea2$n[length(tripByArea2$n)] 
+      print(total)
+      tripByArea2$percentage <- ((tripByArea2$n)/total)*100
+      
+      
+    }else if(input$toFrom2 == 'end' ){
+      print(input$area)
+      print(input$company)
+      print("end radio")
+      DATAarea2 <-getCOMPDROPReactive()
+      
+      tripByArea2 <- DATAarea2 %>%
+        select(`pickup`,`dropoff`) %>%
+        gather(variable,area_num_1) %>%
+        count(variable,area_num_1) %>%
+        drop_na(area_num_1) %>%
+        mutate(area_num_1 = as.character(area_num_1))
+      
+      total <-tripByArea2$n[1] 
+      print(total)
+      tripByArea2$percentage <- ((tripByArea2$n)/total)*100
+      
+      
+    }
+    
+    
+    leaflet(shp) %>% 
+      addTiles() %>% 
+      setView(lat=41.891105, lng=-87.652480,zoom = 10) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(data=shp,
+                  weight=1,
+                  highlightOptions = highlightOptions(color = "white", weight = 2,bringToFront = TRUE)
+      )
+    
+    
+    
+    shpPickUp <- shp
+    shpDropOff <- shp
+    
+    shpPickUp@data <- shpPickUp@data %>%
+      left_join(filter(tripByArea2,variable == 'pickup'), 
+                by = 'area_num_1')
+    
+    shpDropOff@data <- shpDropOff@data %>%
+      left_join(filter(tripByArea2,variable == 'dropoff'), 
+                by = 'area_num_1')
+    
+    bins <- c(0, 0.3, 0.5, 1, 2,3,4,5,6,7,9,10,50,100)
+    pal <- colorBin("inferno", domain = (shp@data$percentage), bins = bins)
+    
+    theLabelsPickUp <- sprintf(
+      "<strong>Community: %s</strong><br/>percentage=%g",
+      shpPickUp@data$community, shpPickUp@data$percentage
+    ) %>% lapply(htmltools::HTML)
+    
+    theLabelsDropOff <- sprintf(
+      "<strong>Community: %s</strong><br/>percentage=%g",
+      shpDropOff@data$community, shpDropOff@data$percentage
+    ) %>% lapply(htmltools::HTML)
+    
+    leaflet(shpPickUp) %>% 
+      addTiles() %>% 
+      setView(lat=41.891105, lng=-87.652480,zoom = 10) %>%
+      addProviderTiles(providers$CartoDB.Positron) %>%
+      addPolygons(data=shpPickUp,
+                  weight=1,
+                  fillColor = ~pal(percentage),
+                  fillOpacity = 0.6,
+                  group = "Pick-Ups",
+                  highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                      bringToFront = TRUE),
+                  label=~theLabelsPickUp) %>%
+      addPolygons(data=shpDropOff,
+                  weight=1,
+                  fillColor = ~pal(percentage),
+                  fillOpacity = 0.6,
+                  group = "Drop-offs",
+                  highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                      bringToFront = TRUE),
+                  label=~theLabelsDropOff) %>%
+      addLegend(pal = pal, 
+                values = ~percentage,
+                opacity = 0.6, 
+                title = "Taxi Trips By Company %",
+                position = "topright") %>%
+      addLayersControl(
+        baseGroups = c("Pick-Ups", "Drop-offs"),
+        options = layersControlOptions(collapsed = FALSE)
+      ) 
+    
+  })
+  
   
   
 }

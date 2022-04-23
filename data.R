@@ -28,9 +28,7 @@ getAllData <- function() {
 
 
 
-getComm <- function() {
-  set.seed(1)
-  
+getCommNames <- function() {
   community_area <- read.table("community_areas.csv", header=TRUE, sep=",")
   alpha <- community_area[order(community_area$community),]
   
@@ -45,6 +43,20 @@ getAreas <- function(){
   alpha <- community_area[order(community_area$community),]
   return(alpha)
 }
+
+getCompNames <- function() {
+  companies <- read.table("companies.csv", header=TRUE, sep=",")
+  alpha <- companies[order(companies$company),]
+  return(alpha$company)
+  
+}
+getComp <- function() {
+  companies <- read.table("companies.csv", header=TRUE, sep=",")
+  alpha <- companies[order(companies$company),]
+  return(alpha)
+}
+
+
 
 ## function to upload file given areaID
 getDATADrop <- function(areaID) {
@@ -70,8 +82,7 @@ getDATADrop <- function(areaID) {
 ## function to upload file given areaID
 getDATAPick <- function(areaID) {
   areaID = areaID
-  # string1 <- "/Users/andreaherrera/Downloads/project2-cs424/code/data_files/final_data_"
-  #string1 <- "/Users/ariad/Documents/424/project2/data_files/final_data_"
+
   string1 <- "pickup_areas/pickuparea"
   
   string2 <- as.character(areaID)
@@ -82,8 +93,46 @@ getDATAPick <- function(areaID) {
   return(Data)
 }
 
-alldata <- getAllData()
 
+## function to upload file given areaID and company id
+getDATA2Drop <- function(areaID,companyID) {
+  areaID = areaID
+  companyID = companyID
+  string0 <- as.character(companyID)
+  string1 <- "companydropoff/"
+  stringM <- "companydropoff"
+  
+  string2 <- as.character(areaID)
+  path = paste(string1,string0,stringM,string2,".tsv",sep="")
+  print(path)
+  Data <- read.table(path, sep = ',', header = TRUE, quote="\"")
+  
+  return(Data)
+}
+
+#test 
+#areaTest <-getDATADrop(1)
+#areaTestPick <-getDATAPick(1)
+
+
+
+## function to upload file given areaID
+getDATA2Pick <- function(areaID,companyID) {
+  areaID = areaID
+  companyID = companyID
+  string0 <- as.character(companyID)
+  string1 <- "companypickup/"
+  stringM <- "companypickup"
+  string2 <- as.character(areaID)
+  
+  path = paste(string1,string0,stringM,string2,".tsv",sep="")
+  print(path)
+  Data <- read.table(path, sep = ',', header = TRUE, quote="\"")
+  
+  return(Data)
+}
+
+#areaTestPick <-getDATA2Pick(1,1)
 
 # dist number of rides by day of year
 dates <- data.frame(alldata$date)
@@ -165,7 +214,7 @@ ggplot(data = as_tibble(group_tags), mapping=aes(x=value, fill=..x..)) +
   
 
 ##############################################################################
-companies <- read.table("company_files/companies.csv", header=TRUE, sep=",")
+companies <- read.table("companies.csv", header=TRUE, sep=",")
 
 # map company name to company id
 # companies[companies$id==company_id, "company"]
