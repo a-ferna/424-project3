@@ -1,5 +1,7 @@
-
+source("allDataGraphs.R")
 source("data.R")
+source("communityGraphs.R")
+source("companyGraphs.R")
 
 #
 # load libraries
@@ -23,30 +25,25 @@ library(viridis)
 areas <- readOGR('shapefiles')
 shp <- spTransform(areas, CRS("+proj=longlat +datum=WGS84"))
 
+# needed variables
+communities <- getCommNames() #list of comm names
+areasDATA <- getAreas() #df with ids
+companiesnames <-getCompNames() #list
+companydata <-getComp() ##df 
 
-alldata <- getAllData()
 
-#placeholder for communities
-communities <- getCommNames()
-areasDATA <- getAreas()
 
-companiesnames <-getCompNames()
-companydata <-getComp()
 
 # Define UI for application that draws a histogram
 # Define UI for random distribution app ----
-ui <- fluidPage(
+ui <- fluidPage(  div(style = "height:3240px;font-size: 70px",
   
   # App title ----
-  titlePanel("Project 3 - Taxi Trips"),
+  titlePanel("Project 3 - Chicago Taxi Rides in 2019"),
 
-  # Sidebar layout with input and output definitions ----
-  #sidebarLayout(
+
   splitLayout(cellWidths = c("30%","70%"),
-      verticalLayout(        
-      leafletOutput("leaf"),
-    
-      sidebarPanel(width = 12,
+              verticalLayout(div(style = "height:3240px;", leafletOutput("leaf", height="50%"), sidebarPanel(width = 12,div(style = "height:1620px;",
                    
                    # Input: Select the random distribution type ----
                    radioButtons("Len", "Distance Conversion:",
@@ -61,8 +58,9 @@ ui <- fluidPage(
                    # br() element to introduce extra vertical spacing ----
                    radioButtons("toFrom", "From", 
                                 c("start" = "pickup",
-                                  "end" = "dropoff"))
-      )),
+                                  "end" = "dropoff")),
+                   selectInput("company", "Select Company",companiesnames)
+      )))),
         # Main panel for displaying outputs ----
 
           # Output: Tabset w/ plot, summary, and table ----
@@ -79,18 +77,102 @@ ui <- fluidPage(
             tabPanel(""),
             tabPanel(""),
             tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
+            tabPanel(""),
             "All Data",
-            tabPanel("Plots",fluidRow( splitLayout(cellWidths = c('50%','50%'),plotOutput("plot"),plotOutput("plot2"))), 
-                              fluidRow(splitLayout(cellWidths = c('50%','50%'),plotOutput("plot3"),plotOutput("plot4")))
+            tabPanel("Plots",fluidRow(div(style = "height:1600px;",splitLayout(cellWidths =c('33%','33%','33%'),plotOutput("yearplot1",height = "1620px"),plotOutput("monthplot1",height = "1620px"),plotOutput("dayplot1",height = "1620px")))), 
+                             fluidRow(div(style = "height:1600px;",splitLayout(cellWidths = c('33%','33%','33%'),plotOutput("milesplot1",height = "1620px"),plotOutput("hourplot1",height = "1620px"),plotOutput("timeplot1",height = "1620px"))))
             ),
             tabPanel("Tabular",plotOutput("plotTab")),
             "Community",
-            tabPanel("Plots ",fluidRow( splitLayout(cellWidths = c('50%','50%'),plotOutput("p5"),plotOutput("p6")))),
+            tabPanel("Plots ",fluidRow(div(style = "height:1600px;",splitLayout(cellWidths = c('33%','33%','33%'),plotOutput("yearplot2",height = "1620px"),plotOutput("monthplot2",height = "1620px"),plotOutput("dayplot2",height = "1620px")))),
+                              fluidRow(div(style = "height:1600px;",splitLayout(cellWidths = c('33%','33%','33%'),plotOutput("milesplot2",height = "1620px"),plotOutput("hourplot2",height = "1620px"),plotOutput("timeplot2",height = "1620px"))))
+            ),
             tabPanel("Tabular",plotOutput("t1")),
             "Company",
-            tabPanel("Plots ",fluidRow( splitLayout(cellWidths = c('50%','50%'),plotOutput("p7"),plotOutput("p8")))),
+            tabPanel("Plots ",fluidRow(div(style = "height:1600px;",splitLayout(cellWidths = c('33%','33%','33%'),plotOutput("yearplot3",height = "1620px"),plotOutput("monthplot3",height = "1620px"),plotOutput("dayplot3",height = "1620px")))),
+                              fluidRow(div(style = "height:1600px;",splitLayout(cellWidths = c('33%','33%','33%'),plotOutput("milesplot3",height = "1620px"),plotOutput("hourplot3",height = "1620px"),plotOutput("timeplot3",height = "1620px"))))
+            ),
             tabPanel("Tabular",plotOutput("tab3")),
-            tabPanel("Map",verticalLayout(leafletOutput("leaf2"), sidebarPanel(width = 12,
+            tabPanel("Map",verticalLayout(div(style = "height:3240px;",leafletOutput("leaf2", height="50%"), sidebarPanel(width = 12,div(style = "height:1620px;",
                                                                               
                                                                                # Input: Select the company alphabetically  ----
                                                                                selectInput("company", "Select Company", companiesnames),
@@ -100,108 +182,103 @@ ui <- fluidPage(
                                                                                radioButtons("toFrom2", "From", 
                                                                                             c("start" = "start",
                                                                                               "end" = "end"))
-            ))),
+            ))))),
             tabPanel("About",p("Project 3 - Big Yellow Taxi"),p("Data file from the Chicago Data Portal"),
                      p("An interactive visualization in R and Shiny on Shinyapps.io"),
-                     p("Dashboard initially shows Map and a tabset of plots"),
+                     p("Dashboard initially shows a Map, a set of Controls and a Nav set of plots\n"),
+                     p("the first section contains plots of all the data,"),
+                     p("THe then their is a section for the Community data and Company area all with plots"),
+                     p("of the following described charts\n"),
+                     p("bar chart showing the distribution of the number of rides by day of year (Jan 1 through Dec 31)\n"),
+                     p("bar chart showing the distribution of the number of rides by hour of day based on start time (midnight through 11pm)\n"),
+                     p("bar chart showing the distribution of the number of rides by day of week (Monday through Sunday)\n"),
+                     p("bar chart showing the distribution of the number of rides by month of year (Jan through Dec)\n"),
+                     p("bar chart showing the distribution of the number of rides by binned mileage (with an appropriate number of bins)\n"),
+                     p("bar chart showing the distribution of the number of rides by binned trip time (with an appropriate number of bins)\n\n"),
+                     p("the charts are controled by the radio buttons uner the map.\n\n"),
+                     p("then all the same plots in tabular form, then"),
+                     p("Finally the last tab opens up a seond map that shows the percentage of rides given to / from each community area by that taxi company."),
                      
+                     p("shape files for the maps were downloaded at"),
+                     p("https://data.cityofchicago.org/Facilities-Geographic-Boundaries/Boundaries-Community-Areas-current-/cauq-8yn6"),
+                     p("app code modled after code from the following tutorial:"),
+                     p("https://bar.rady.ucsd.edu/interactive_maps.html"),
                      p("Written by Ariadna Fernandez and Andrea Herrera ") ), selected = "About"
           )
   
   )
+ )
 )
 
 # Define server logic for random distribution app ----
 server <- function(input, output) {
   
-  # Generate a plot of the data ----
+  
+  # Generate a plots of the data ----
+  
+  # initial plot with all data
+  
+  output$yearplot1 <- renderPlot({yearplot1()})
+  
+  output$hourplot1 <-renderPlot({hourplot1(input$time)})
+  
+  output$monthplot1 <- renderPlot ({monthplot1()})
+  
+  output$dayplot1 <- renderPlot ({dayplot1()})
+  
+  output$milesplot1 <- renderPlot ({milesplot1(input$Len)})
+  
+  output$timeplot1 <-renderPlot ({secsplot1()})
+  
+  
+  ## plots according to selected community area
+  
+  # get community id corresponding to the selected name of the community area
+  getCommIDReactive <- reactive ({areasDATA[areasDATA$community==input$community, "area_id"]})
+  
+  getCommDataReactive <- reactive ({getCommData(getCommIDReactive(), input$toFrom )})
 
-  output$plot <- renderPlot({
-    dates <- data.frame(alldata$date)
-    colnames(dates) <- c("date")
-    
-    ggplot(dates, aes(x=date)) +
-      geom_histogram(binwidth=.5) +
-      geom_density(alpha=.2, fill="red")  #density doesn't show
-  })
-  
-  
-  output$plot2 <- renderPlot({
-    ggplot(alldata, aes(x=hour, fill=..x..)) +
-      geom_bar(stat="count") +
-      labs(x="Hour", y="Total Rides", title="Total Rides by Hour of the Day") +
-      scale_fill_gradientn(labels=NULL, colors=c("orangered2", "yellow", "blue2"))+
-      theme(legend.position = "none") +
-      scale_y_continuous(labels = comma, breaks = seq(0, 900000, 100000)) +
-      # scale_x_continuous(breaks = seq(0, 23, 1)) 
-      scale_x_continuous(breaks = seq(0, 23, 1),
-                         labels =c("12am","1am","2am","3am","4am","5am","6am","7am","8am","9am","10am","11am","12pm","1pm","2pm","3pm","4pm","5pm","6pm","7pm","8pm","9pm","10pm","11pm"),
-                         guide = guide_axis(angle = 40))
-  })
-  
-  output$plot3 <- renderPlot({
-    ggplot(alldata, aes(x=wday)) +
-      geom_bar(stat="count", fill="skyblue3") +
-      scale_y_continuous(labels = comma, breaks = seq(0, 2000000, 250000)) +
-      scale_x_discrete(limits = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")) +
-      labs(x="Day of the Week", y="Total Rides", title="Total Rides by Day of the Week")
-  })
-  
-  output$plot4 <- renderPlot({
-    ggplot(alldata, aes(x=month)) +
-      geom_bar(stat="count", fill="palegreen3") +
-      scale_y_continuous(labels = comma, breaks = seq(0, 1200000, 200000)) +
-      scale_x_discrete(limits=c("Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-      labs(x="Month", y="Total Rides", title="Total Rides by Month")
-  })
-  
-  
-  output$p5 <-renderPlot({
-    # dist number of rides by binned mileage
-    breaks <- c(0, 0.75, 1, 1.25, 1.5, 2, 3, 5, 8, 10, 15, 20, 25, 30, 40, 101)
-    tags <- c("[0.5-0.75]","[0.75-1]","[1-1.25]","[1.25-1.5]","[1.5-2]","[2-3]","[3-5]","[5-8]","[8-10]","[10-15]",
-              "[15-20]","[20-25]","[25-30]","[30-40]","[40-100]")
-    group_tags <- cut(alldata$miles, 
-                      breaks=breaks, 
-                      include.lowest=TRUE, 
-                      right=FALSE, 
-                      labels=tags)
-     summary(group_tags)
-    
-    ggplot(data = as_tibble(group_tags), mapping=aes(x=value, fill=..x..)) +
-      geom_bar(width = 0.9) +
-      scale_fill_gradientn(colours = c("plum1","mediumpurple3","darkorchid3")) +
-      labs(x="Miles", y="Total Rides", title="Number of Rides by Mileage") +
-      scale_y_continuous(labels = comma) +
-      # scale_x_discrete(guide = guide_axis(angle = 10)) +
-      theme(legend.position = "none") 
-    })
-  
-  
-  output$p6 <-renderPlot({
-    breaks <- c(0, 180, 300, 420, 600, 720, 900, 1200, 1800, 2700, 3600, 7200, 10800, 14400, 18000)
-    tags <- c("3min","5min","7min","10min","12min","15min","20min","30min","45min","1hr","2hr","3hr","4hr","5hr")
-    # breaks <- c(0, 100, 200, 300, 400, 500, 600, 750, 1000, 1500, 2000, 3000, 5000, 10000, 15000, 18000)
-    # tags <- c("60-100","100-200","200-300","300-400","400-500","500-600","600-750","750-1000","1000-1500","1500-2000","2000-3000", "3000-5000", "5000-10000", "10000-15000", "15-18000")
-    
-    group_tags <- cut(alldata$secs,
-                      breaks=breaks,
-                      include.lowest=TRUE,
-                      right=FALSE,
-                      labels=tags)
-    
-    ggplot(data = as_tibble(group_tags), mapping=aes(x=value, fill=..x..)) +
-      geom_bar() +
-      labs(x="Trip time", y="Count", title="Number of Rides by Trip Time") +
-      scale_y_continuous(labels = comma) +
-      theme(legend.position = "none")
-  })
-  
-  
-  output$p7 <-renderPlot({
+  output$yearplot2 <- renderPlot({
 
+    name <- str_to_title(input$community)
+    data <- getCommDataReactive()
+    yearplot2(input$community, data)
   })
   
+  output$monthplot2 <- renderPlot ({monthplot2(getCommDataReactive(), input$community, input$toFrom)})
+
+  output$dayplot2 <- renderPlot ({dayplot2(getCommDataReactive(), input$community, input$toFrom)})
+
+  output$hourplot2 <-renderPlot ({hourplot2(getCommDataReactive(),input$time, input$community, input$toFrom)})
+
+  output$milesplot2 <- renderPlot ({milesplot2(getCommDataReactive(), input$community, input$toFrom,input$Len)}) #kilometers!!!!
+
+  output$timeplot2 <-renderPlot ({secsplot2(getCommDataReactive(), input$community, input$toFrom)})
+
+  
+  
+  ## plots according to taxi companies
+  
+  getCompanyIDReactive <- reactive({companydata[companydata$company==input$company, "id"]})
+  
+  getCompanyDataReactive <- reactive ({getCompanyData(getCompanyIDReactive())})
+  
+  output$yearplot3 <- renderPlot({
+    
+    data <- getCompanyDataReactive()
+    yearplot3(data, input$company)
+  })
+  
+  output$monthplot3 <- renderPlot ({monthplot3(getCompanyDataReactive(), input$company)})
+  
+  output$dayplot3 <- renderPlot ({dayplot3(getCompanyDataReactive(), input$company)})
+  
+  output$hourplot3 <-renderPlot ({hourplot3(getCompanyDataReactive(),input$time, input$company)})
+  
+  output$milesplot3 <- renderPlot ({milesplot3(getCompanyDataReactive(), input$company, input$Len)}) #kilometers!!!!
+  
+  output$timeplot3 <-renderPlot ({secsplot3(getCompanyDataReactive(), input$company)})
+ 
   
   ## reactive functions for selected area 
   getIDReactive <- reactive({ as.character(areasDATA[areasDATA$community == input$community, "area_id"]) })
@@ -249,7 +326,7 @@ server <- function(input, output) {
     }
     
     #areaTest 
-    DATAarea <-getDATADrop(40)
+    #DATAarea <-getDATADrop(40)
     #colorQuantile()
     
     
@@ -315,7 +392,8 @@ server <- function(input, output) {
                 position = "topright") %>%
       addLayersControl(
         baseGroups = c("Pick-Ups", "Drop-offs"),
-        options = layersControlOptions(collapsed = FALSE)
+        options = layersControlOptions(collapsed = FALSE),
+        position = "bottomright"
       ) 
    
   })
@@ -433,7 +511,8 @@ server <- function(input, output) {
                 position = "topright") %>%
       addLayersControl(
         baseGroups = c("Pick-Ups", "Drop-offs"),
-        options = layersControlOptions(collapsed = FALSE)
+        options = layersControlOptions(collapsed = FALSE),
+        position = "bottomright"
       ) 
     
   })
